@@ -22,14 +22,7 @@ jobs:
     - name: Run test java
       run: ./gradlew test
 
-on:
-  push:
-    branches: [ "develop" ]
-  pull_request:
-    branches: [ "develop" ]
-jobs:
-  database-pipeline:
-    environment: runner
+  verify_pipeline_with_mysql:
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -59,5 +52,6 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+
     - name: Run test java
       run: ./gradlew test
