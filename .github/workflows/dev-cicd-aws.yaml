@@ -157,3 +157,41 @@ jobs:
         else
           echo "No SARIF results file found." >> $GITHUB_STEP_SUMMARY
         fi
+        
+    build-and-upload:
+      # needs: [verify-pipeline]  # 기존 검증 후 실행
+      runs-on: ubuntu-latest
+      #environment: ${{ github.ref == 'refs/heads/main' && 'prd' || 'dev' }}
+      environment: dev
+      steps:
+        - name: Checkout source code
+          uses: actions/checkout@v4
+
+        - name: change application.yml
+          run: |
+            cat > src/main/resources/application.yml << EOF
+            spring:
+              datasource:
+                url: ${{ secrets.DATABASE_URL }} # 예dbc:mysql://localhost:3306/istory
+                username: ${{ secrets.MYSQL_USERNAME }}
+                password: ${{ secrets.MYSQL_PASSWORD }}
+                driver-class-name: com.mysql.cj.jdbc.Driver
+              jpa:
+                database-platform: org.hibernate.dialect.MySQL8Dialect
+                hibernate:
+                  ddl-auto: update
+                show-sql: true
+              application:
+                name: USER-SERVICE
+              jwt:
+                issuer: user@gmail.com
+                secret_key: study-springboot
+            management:
+              endpoints:
+                web:
+                  exposure:
+                    include: health,info
+              endpoint:
+                health:
+                  show-details: always
+            EOF
