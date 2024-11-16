@@ -50,7 +50,7 @@ jobs:
         cat > src/main/resources/application.yml << EOF
         spring:
           datasource:
-            url: ${{ secrets.DATABASE_URL }} # 예 jdbc:mysql://localhost:3306/istory
+            url: ${{ secrets.DATABASE_URL }} # ex) jdbc:mysql://localhost:3306/istory
             username: ${{ secrets.MYSQL_USER }}
             password: ${{ secrets.MYSQL_PASSWORD }}
             driver-class-name: com.mysql.cj.jdbc.Driver
@@ -265,7 +265,7 @@ jobs:
         K6_DURATION: "30s"
 
   build-and-upload:
-    # needs: [verify-pipeline] 
+    needs: [verify_pipeline] 
     runs-on: ubuntu-latest
     environment: dev
     steps:
