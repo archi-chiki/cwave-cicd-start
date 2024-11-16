@@ -40,33 +40,33 @@ jobs:
         distribution: 'temurin'
         
     - name: change application.yml
-        run: |
-          cat > src/main/resources/application.yml << EOF
-          spring:
-            datasource:
-              url: ${{ secrets.DATABASE_URL }} # 예dbc:mysql://localhost:3306/istory
-              username: ${{ secrets.MYSQL_USER }}
-              password: ${{ secrets.MYSQL_PASSWORD }}
-              driver-class-name: com.mysql.cj.jdbc.Driver
-            jpa:
-              database-platform: org.hibernate.dialect.MySQL8Dialect
-              hibernate:
-                ddl-auto: update
-              show-sql: true
-            application:
-              name: USER-SERVICE
-            jwt:
-              issuer: user@gmail.com
-              secret_key: study-springboot
-          management:
-            endpoints:
-              web:
-                exposure:
-                  include: health,info
-            endpoint:
-              health:
-                show-details: always
-          EOF
+      run: |
+        cat > src/main/resources/application.yml << EOF
+        spring:
+          datasource:
+            url: ${{ secrets.DATABASE_URL }} # 예dbc:mysql://localhost:3306/istory
+            username: ${{ secrets.MYSQL_USER }}
+            password: ${{ secrets.MYSQL_PASSWORD }}
+            driver-class-name: com.mysql.cj.jdbc.Driver
+          jpa:
+            database-platform: org.hibernate.dialect.MySQL8Dialect
+            hibernate:
+              ddl-auto: update
+            show-sql: true
+          application:
+            name: USER-SERVICE
+          jwt:
+            issuer: user@gmail.com
+            secret_key: study-springboot
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: health,info
+          endpoint:
+            health:
+              show-details: always
+        EOF
     - name: 테스트 수행
       run: ./gradlew test
 
