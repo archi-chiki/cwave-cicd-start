@@ -22,8 +22,6 @@ jobs:
     - name: Run test java
       run: ./gradlew test
 
-name: istory ci/cd dev pipeline
-
 on:
   push:
     branches: [ "develop" ]
