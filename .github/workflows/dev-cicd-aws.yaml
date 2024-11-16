@@ -223,7 +223,7 @@ jobs:
               show-details: always
         EOF
 
-    - name: Build 
+    - name: Build
       run: |
         ./gradlew bootJar
 
@@ -231,7 +231,7 @@ jobs:
       run: |
         nohup java -jar build/libs/*.jar &
         sleep 10  # 애플리케이션이 완전히 시작될 때까지 대기
-        
+
     - name: Install k6
       run: |
         curl -L https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tar.gz
