@@ -74,24 +74,24 @@ jobs:
               show-details: always
         EOF
     
-    # - name: 테스트 수행
-    #   run: ./gradlew test
+    - name: 테스트 수행
+      run: ./gradlew test
 
-    # - name: 테스트 검사 후 실패 시 파이프라인 중단
-    #   if: failure()
-    #   run: |
-    #     echo "Tests failed! Pipeline will be stopped."
-    #     exit 1
+    - name: 테스트 검사 후 실패 시 파이프라인 중단
+      if: failure()
+      run: |
+        echo "Tests failed! Pipeline will be stopped."
+        exit 1
 
-    # - name: 테스트 결과를 STEP Summary 에 업로드
-    #   if: always()
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: test-report
-    #     path: |                    # 여러 경로 지정
-    #       **/build/reports/tests/test/
-    #       **/build/test-results/test/
-    #     retention-days: 30
+    - name: 테스트 결과를 STEP Summary 에 업로드
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report
+        path: |                    # 여러 경로 지정
+          **/build/reports/tests/test/
+          **/build/test-results/test/
+        retention-days: 30
 
     - name: 기본수행정보 Step Summary 에 표시
       run: |
