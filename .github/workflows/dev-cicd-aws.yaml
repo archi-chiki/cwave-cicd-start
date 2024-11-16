@@ -174,7 +174,7 @@ jobs:
           spring:
             datasource:
               url: ${{ secrets.DATABASE_URL }} # 예dbc:mysql://localhost:3306/istory
-              username: ${{ secrets.MYSQL_USERNAME }}
+              username: ${{ secrets.MYSQL_USER }}
               password: ${{ secrets.MYSQL_PASSWORD }}
               driver-class-name: com.mysql.cj.jdbc.Driver
             jpa:
@@ -196,3 +196,40 @@ jobs:
               health:
                 show-details: always
           EOF
+
+      - name: AWS 접속정보 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2  # 서울 리전
+
+      - name: JDK17 환경 셋팅
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: 실행 가능한 JAR 빌드
+        run: |
+          chmod +x gradlew
+          ./gradlew bootJar
+          
+      - name: 아티팩트 이름 만들기
+        run: |
+          echo "ARTIFACT_NAME=springboot-$(date +'%Y%m%d-%H%M%S').jar" >> $GITHUB_ENV
+
+      - name: 배포 패키지 생성
+        run: |
+          mkdir -p deployment
+          cp build/libs/*.jar deployment/${{ env.ARTIFACT_NAME }}
+          cp appspec.yml deployment/
+          cp -r scripts deployment/
+          cd deployment && zip -r ../deploy.zip .
+
+      - name: 아티팩트 및 배포 패키지 S3 업로드
+        run: |
+          # JAR 파일 업로드
+          aws s3 cp deployment/${{ env.ARTIFACT_NAME }} s3://${{ secrets.AWS_S3_BUCKET }}/artifacts/
+          # 배포 패키지 업로드
+          aws s3 cp deploy.zip s3://${{ secrets.AWS_S3_BUCKET }}/deploy/deploy.zip
