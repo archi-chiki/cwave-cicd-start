@@ -5,17 +5,19 @@ on:
     branches: [ "develop" ]
   pull_request:
     branches: [ "develop" ]
+
 jobs:
   verify_pipeline:
-	runs-on: ubuntu-latest
-  steps:
-  - name: Source Code Checkout
-    uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    steps:
+    - name: Source Code Checkout
+      uses: actions/checkout@v4
 
-  - name: Set up JDK 17
-    uses: actions/setup-java@v4
-    with:
-      java-version: '17'
-      distribution: 'temurin'
-  - name: Run test java
-    run: ./gradlew test
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Run test java
+      run: ./gradlew test
