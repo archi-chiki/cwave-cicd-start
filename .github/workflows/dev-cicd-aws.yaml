@@ -28,7 +28,7 @@ on:
   pull_request:
     branches: [ "develop" ]
 jobs:
-  verify-pipeline:
+  database-pipeline:
     environment: runner
     runs-on: ubuntu-latest
     services:
