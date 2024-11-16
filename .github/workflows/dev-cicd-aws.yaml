@@ -233,3 +233,44 @@ jobs:
           aws s3 cp deployment/${{ env.ARTIFACT_NAME }} s3://${{ secrets.AWS_S3_BUCKET }}/artifacts/
           # 배포 패키지 업로드
           aws s3 cp deploy.zip s3://${{ secrets.AWS_S3_BUCKET }}/deploy/deploy.zip
+
+      - name: 배포 정보 요약하기
+        run: |
+          echo "## 📦 배포 정보" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 내용 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎯 버킷 | \`${{ secrets.AWS_S3_BUCKET }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📄 파일명 | \`${{ env.ARTIFACT_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🕒 배포 시각 | $(date) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 기존 진행중인 배포 삭제
+        run: |
+          DEPLOYMENTS=$(aws deploy list-deployments \
+            --application-name istory-app \
+            --deployment-group-name istory-deploy-group \
+            --include-only-statuses "InProgress" \
+            --query 'deployments[]' \
+            --output text)
+          
+          if [ ! -z "$DEPLOYMENTS" ]; then
+            for deployment in $DEPLOYMENTS; do
+              echo "Stopping deployment $deployment"
+              aws deploy stop-deployment --deployment-id $deployment
+            done
+            # 잠시 대기하여 취소가 완료되도록 함
+            sleep 10
+          fi
+      - name: CodeDeploy를 사용한 애플리케이션 배포(EC2)
+        id: deploy
+        run: |
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name istory-app \
+            --deployment-group-name istory-deploy-group \
+            --s3-location bucket=${{ secrets.AWS_S3_BUCKET }},key=deploy/deploy.zip,bundleType=zip \
+            --output text \
+            --query 'deploymentId')
+          echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
+
+      - name: 배포 최종 성공 확인
+        run: |
+          aws deploy wait deployment-successful --deployment-id ${{ steps.deploy.outputs.deployment_id }}
