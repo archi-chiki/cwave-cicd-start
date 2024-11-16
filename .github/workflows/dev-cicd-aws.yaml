@@ -109,3 +109,51 @@ jobs:
         name: checkstyle-report
         path: build/reports/checkstyle/
         retention-days: 14
+
+    - name: 코드 컨벤션 검사 결과를 마크다운으로 출력
+      run: |
+        echo "## 코드 스타일 분석결과" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f build/reports/checkstyle/main.xml ]; then # 소스분석결과 존재시
+          echo "### 소스분석결과" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat build/reports/checkstyle/main.xml >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: CodeQL 초기화
+      uses: github/codeql-action/init@v3
+      with:
+        languages: java
+        queries: security-and-quality
+
+    - name: 코드 빌드
+      uses: github/codeql-action/autobuild@v3
+
+    - name: 보안취약점 분석
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:java"
+        output: sarif-results
+
+    - name: 보안취약점 분석 요약 생성
+      run: |
+        echo "# 파이프라인 리포트" >> $GITHUB_STEP_SUMMARY
+        echo "## 보안 경고" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f sarif-results/java.sarif ]; then
+          if jq -e '.runs[0].results' sarif-results/java.sarif > /dev/null 2>&1; then
+            ALERTS=$(jq '.runs[].results | length' sarif-results/java.sarif)
+            echo "${ALERTS}개의 잠재적인 보안 이슈가 발견 되었습니다." >> $GITHUB_STEP_SUMMARY
+            
+            echo "### 보안 경고 상세" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Rule | Description | File |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|------|-------------|------|" >> $GITHUB_STEP_SUMMARY
+            
+            jq -r '.runs[].results[] | "| \(.properties.security_severity // "medium") | \(.ruleId // "N/A") | \(.message.text // "N/A") | \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) |"' sarif-results/java.sarif >> $GITHUB_STEP_SUMMARY || true
+          else
+            echo "No results found in SARIF file." >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "No SARIF results file found." >> $GITHUB_STEP_SUMMARY
+        fi

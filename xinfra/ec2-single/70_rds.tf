@@ -33,7 +33,7 @@ resource "aws_db_instance" "istory_db" {
   allocated_storage   = 20
   storage_type        = "gp2"
   
-  db_name             = "archichiki"
+  db_name             = "istory"
   username           = "archichiki"
   password           = "abcd12345"  # 실제 운영에서는 AWS Secrets Manager 사용 권장
   
