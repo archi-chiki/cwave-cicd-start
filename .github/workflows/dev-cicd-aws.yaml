@@ -16,7 +16,7 @@ jobs:
           # root 계정 비밀번호
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           # 사용자 계정
-          MYSQL_USER: ${{ secrets.MYSQL_USERNAME }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
           # 사용자 계정 비밀번호
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           # 사용자 계정 데이터베이스
