@@ -71,7 +71,7 @@ jobs:
     - name: 테스트 수행
       run: ./gradlew test
 
-    - name: 테스트 검사 후 실패 시 파이프라인 중담다디담
+    - name: 테스트 검사 후 실패 시 파이프라인 중담다디담디담
       if: failure()
       run: |
         echo "Tests failed! Pipeline will be stopped."
