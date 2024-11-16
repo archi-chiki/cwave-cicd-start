@@ -1,7 +1,7 @@
 spring:
   datasource:
     url: ${DATABASE_URL:jdbc:mysql://192.168.200.38:3306/istory}
-    username: ${MYSQL_USERNAME:root}
+    username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:admin123}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
