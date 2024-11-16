@@ -21,3 +21,45 @@ jobs:
 
     - name: Run test java
       run: ./gradlew test
+
+name: istory ci/cd dev pipeline
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+jobs:
+  verify-pipeline:
+    environment: runner
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # root 계정 비밀번호
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          # 사용자 계정
+          MYSQL_USER: ${{ secrets.MYSQL_USERNAME }}
+          # 사용자 계정 비밀번호
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          # 사용자 계정 데이터베이스
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    steps:
+    - name: Source Code Checkout
+      uses: actions/checkout@v4 
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Run test java
+      run: ./gradlew test
