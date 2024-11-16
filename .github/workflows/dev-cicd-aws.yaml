@@ -162,6 +162,106 @@ jobs:
           echo "No SARIF results file found." >> $GITHUB_STEP_SUMMARY
         fi
 
+  load-test:
+      runs-on: ubuntu-latest
+      environment: runner
+      services:
+        mysql:
+          image: mysql:8.0
+          env:
+            # root 계정 비밀번호
+            MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+            # 사용자 계정
+            MYSQL_USER: ${{ secrets.MYSQL_USER }}
+            # 사용자 계정 비밀번호
+            MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+            # 사용자 계정 데이터베이스
+            MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          ports:
+            - 3306:3306
+          options: >-
+            --health-cmd="mysqladmin ping"
+            --health-interval=10s
+            --health-timeout=5s
+            --health-retries=3
+      steps:
+        - name: 배포용 소스 다운로드
+          uses: actions/checkout@v4
+          
+        - name: JDK 17 설치
+          uses: actions/setup-java@v4
+          with:
+            java-version: '17'
+            distribution: 'temurin'
+
+        - name: change application.yml
+        run: |
+          cat > src/main/resources/application.yml << EOF
+          spring:
+            datasource:
+              url: ${{ secrets.DATABASE_URL }} # 예dbc:mysql://localhost:3306/istory
+              username: ${{ secrets.MYSQL_USER }}
+              password: ${{ secrets.MYSQL_PASSWORD }}
+              driver-class-name: com.mysql.cj.jdbc.Driver
+            jpa:
+              database-platform: org.hibernate.dialect.MySQL8Dialect
+              hibernate:
+                ddl-auto: update
+              show-sql: true
+            application:
+              name: USER-SERVICE
+            jwt:
+              issuer: user@gmail.com
+              secret_key: study-springboot
+          management:
+            endpoints:
+              web:
+                exposure:
+                  include: health,info
+            endpoint:
+              health:
+                show-details: always
+          EOF
+        - name: Build
+          run: |
+            ./gradlew bootJar
+            
+        - name: Run Spring Boot
+          run: |
+            nohup java -jar build/libs/*.jar &
+            sleep 10  # 애플리케이션이 완전히 시작될 때까지 대기
+
+        - name: Install k6
+          run: |
+            curl -L https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tar.gz
+            tar -xzf k6.tar.gz
+            sudo cp k6-v0.49.0-linux-amd64/k6 /usr/local/bin/
+
+        - name: Run k6 load test
+          run: |
+            # k6 실행 결과를 파일로 저장
+            k6 run src/test/load/load-test.js > k6_results.txt
+            
+            # GitHub Step Summary에 k6 결과 추가
+            echo "## 부하 테스트 결과" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat k6_results.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            
+            # JSON 형식으로도 결과 저장 (선택사항)
+            k6 run --out json=results.json src/test/load/load-test.js
+            
+            # 주요 메트릭 요약 추가
+            echo "### 주요 메트릭 요약" >> $GITHUB_STEP_SUMMARY
+            echo "| 메트릭 | 결과 |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 총 요청 수 | $(grep "http_reqs" k6_results.txt | awk '{print $2}') |" >> $GITHUB_STEP_SUMMARY
+            echo "| 평균 응답 시간 | $(grep "http_req_duration" k6_results.txt | awk '{print $3}') |" >> $GITHUB_STEP_SUMMARY
+            echo "| 실패율 | $(grep "http_req_failed" k6_results.txt | awk '{print $3}') |" >> $GITHUB_STEP_SUMMARY
+          env:
+            K6_VIRTUAL_USERS: 10
+            K6_DURATION: "30s"
+
   build-and-upload:
     # needs: [verify-pipeline] 
     runs-on: ubuntu-latest
